@@ -1,12 +1,16 @@
 import * as THREE from 'three';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import Stats from 'three/addons/libs/stats.module.js';
-import { InstancedFlow } from 'three/addons/modifiers/CurveModifier.js';
+import { Flow, InstancedFlow } from 'three/addons/modifiers/CurveModifier.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { getCurves, getLine } from './line';
 import { placeDancers } from './dancers';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { tan } from 'three/examples/jsm/nodes/Nodes.js';
 
 const ACTION_SELECT = 1, ACTION_NONE = 0;
 const curveHandles: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = [];
@@ -15,68 +19,86 @@ const mouse = new THREE.Vector2();
 let settings;
 
 let stats: Stats;
+let mesh :THREE.Mesh;
 let scene: THREE.Scene,
 	camera: THREE.PerspectiveCamera,
 	renderer: THREE.WebGLRenderer,
-	rayCaster: THREE.Raycaster,
+	// rayCaster: THREE.Raycaster,
 	control: TransformControls,
 	flow: InstancedFlow,
-	action = ACTION_NONE;
+	flow2: InstancedFlow,
+	action = ACTION_NONE,
+	clock: THREE.Clock;
+
+let model1: THREE.Object3D<THREE.Object3DEventMap>;
+let mixer: THREE.AnimationMixer, mixer1: THREE.AnimationMixer, mixerM1: THREE.AnimationMixer, mixerM2: THREE.AnimationMixer;
+let curves: { curve: THREE.Curve<THREE.Vector3>; }[] = [];
 
 init();
 animate();
 
 function init() {
-	scene = new THREE.Scene();
 
-	const light = new THREE.DirectionalLight( 0xffaa33, 3 );
-	light.position.set( - 10, 10, 10 );
-	scene.add( light );
+    clock = new THREE.Clock();
 
-	const light2 = new THREE.AmbientLight( 0x003973, 3 );
-	scene.add( light2 );
-
-	camera = new THREE.PerspectiveCamera(
-		40,
-		window.innerWidth / window.innerHeight,
-		1,
-		1000
-	);
-	camera.position.set( 2, 2, 4 );
-	camera.lookAt( scene.position );
-
-    const curves = getCurves(scene,curveHandles);
-
-	const material = new THREE.MeshStandardMaterial( {
-		color: 0x99ffff
-	} );
-
-	const numberOfInstances = 8;
-    const geometry = new THREE.ConeGeometry( 0.2, 0.5, 8 ).rotateZ(-Math.PI/2); 
-	flow = new InstancedFlow( numberOfInstances, curves.length, geometry, material );
-
-	curves.forEach( function ( { curve }, i ) {
-		flow.updateCurve( i, curve );
-		scene.add( flow.object3D );
-	} );
-
-	for ( let i = 0; i < numberOfInstances; i ++ ) {
-		const curveIndex = i % curves.length;
-		flow.setCurve( i, curveIndex );
-		flow.moveIndividualAlongCurve( i, i * 1 / numberOfInstances );
-		flow.object3D.setColorAt( i, new THREE.Color( 0xffffff * Math.random() ) );
-	}
-
-	// placeDancers(scene, curves, flow);
+    const container = document.createElement( 'div' );
+    document.body.appendChild( container );
 
     renderer = new THREE.WebGLRenderer( { antialias: true } );
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
-    document.body.appendChild( renderer.domElement );
+    renderer.shadowMap.enabled = true;
+    container.appendChild( renderer.domElement );
 
-    renderer.domElement.addEventListener( 'pointerdown', onPointerDown );
+	scene = new THREE.Scene();
+    scene.background = new THREE.Color( 0xa0a0a0 );
+    scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
 
-    rayCaster = new THREE.Raycaster();
+	camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+	camera.position.set( 100, 200, 300 );
+	camera.lookAt( scene.position );
+
+    const controls = new OrbitControls( camera, renderer.domElement );
+    controls.target.set( 0, 100, 0 );
+    controls.update();
+
+    const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 5 );
+    hemiLight.position.set( 0, 200, 0 );
+    scene.add( hemiLight );
+
+    const dirLight = new THREE.DirectionalLight( 0xffffff, 5 );
+    dirLight.position.set( 0, 200, 100 );
+    dirLight.castShadow = true;
+    dirLight.shadow.camera.top = 180;
+    dirLight.shadow.camera.bottom = - 100;
+    dirLight.shadow.camera.left = - 120;
+    dirLight.shadow.camera.right = 120;
+    scene.add( dirLight );
+
+	// ground
+    const ground = new THREE.Mesh( new THREE.PlaneGeometry( 2000, 2000 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+    ground.rotation.x = - Math.PI / 2;
+    ground.receiveShadow = true;
+	scene.add( ground );
+
+    const grid = new THREE.GridHelper( 2000, 20, 0x000000, 0x000000 );
+    grid.material.opacity = 0.2;
+    grid.material.transparent = true;
+    scene.add( grid );
+
+    curves = getCurves(scene,curveHandles);
+	flow = placeDancers(scene, curves);
+
+	// model
+    const ladyLoader = new FBXLoader();
+
+    ladyLoader.load( 'models/fbx/DancingLady.fbx', function ( fbx: THREE.Group<THREE.Object3DEventMap> ) {
+        model1 = SkeletonUtils.clone (fbx);
+        mixer1 = new THREE.AnimationMixer( model1 );
+        mixer1.clipAction( model1.animations[ 0 ] ).play();
+        scene.add( model1 );
+    } );
+
     control = new TransformControls( camera, renderer.domElement );
     control.addEventListener( 'dragging-changed', function ( event ) {
 
@@ -111,20 +133,28 @@ function onPointerDown( event: { clientX: number; clientY: number; } ) {
 	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
-function animate() {
+function animate()  {
 	requestAnimationFrame( animate );
-	if ( action === ACTION_SELECT ) {
-		rayCaster.setFromCamera( mouse, camera );
-		action = ACTION_NONE;
-		const intersects = rayCaster.intersectObjects( curveHandles, false );
-		if ( intersects.length ) {
-			const target = intersects[ 0 ].object;
-			control.attach( target );
-			scene.add( control );
-		}
-	}
+    const delta = clock.getDelta();
+    if ( mixer1 ) mixer1.update( delta );
+
+    if (model1) {
+      if (model1.position) {
+	     const secondsPerRound = 20;
+	     const now = clock.getElapsedTime()/secondsPerRound % 1;
+	     const later = (clock.getElapsedTime()/secondsPerRound + 0.01) % 1;
+	     const curcurve = curves[0].curve;
+         const point = curcurve.getPointAt(now); // Ensure animation loops seamlessly
+         const targetpoint = curcurve.getPointAt(later); // Ensure animation loops seamlessly
+		 model1.position.copy(point);
+		 model1.lookAt(targetpoint);
+	  };
+	};
 	if ( flow ) {
 		flow.moveAlongCurve( 0.001 );
+	}
+	if ( flow2 ) {
+		flow2.moveAlongCurve( 0.01 );
 	}
 	render();
 }

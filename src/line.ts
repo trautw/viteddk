@@ -4,16 +4,16 @@ export function getCurves(scene: { add: (arg0: THREE.Mesh<THREE.BoxGeometry, THR
     const boxGeometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
 	const boxMaterial = new THREE.MeshBasicMaterial();
     return [[
-					{ x:   1, y: 0, z: - 1 },
-					{ x:   1, y: 0.5, z: 1 },
-					{ x: - 1, y: 0, z: 1 },
-					{ x: - 1, y: 0, z: - 1 },
+					{ x:   100, y: 0, z: - 100 },
+					{ x:   100, y: 50, z: 100},
+					{ x: - 100, y: 0, z: 100 },
+					{ x: - 100, y: 0, z: - 100 },
 				],
 				[
-					{ x: 2, y: 0, z: - 1 },
-					{ x: 2, y: 0, z: 1 },
-					{ x: 4, y: 0, z: 1 },
-					{ x: 4, y: 0, z: - 1 },
+					{ x: 200, y: 0, z: - 100 },
+					{ x: 200, y: 0, z: 100 },
+					{ x: 400, y: 0, z: 100 },
+					{ x: 400, y: 0, z: - 100 },
 				]].map( function ( curvePoints ) {
 
 					const curveVertices = curvePoints.map( function ( handlePos ) {
