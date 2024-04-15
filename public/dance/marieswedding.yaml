@@ -1,0 +1,50 @@
+---
+person:
+  - name: L1
+    model: models/fbx/DancingLady.fbx
+    path:
+      points:
+        - x:  100
+          z: -100
+        - x:  100
+          z:  100
+        - x: -100
+          z:  100
+        - x: -100
+          z: -100
+  - name: L2
+    model: models/fbx/DancingLady.fbx
+    path:
+      points:
+        - x: -100
+          z: -100
+        - x:  100
+          z: -100
+        - x:  100
+          z:  100
+        - x: -100
+          z:  100
+  - name: M1
+    model: models/fbx/DancingMan.fbx
+    path:
+      points:
+        - x:  100
+          z:  100
+        - x: -100
+          z:  100
+        - x: -100
+          z: -100
+        - x:  100
+          z: -100
+  - name: M2
+    model: models/fbx/DancingMan.fbx
+    path:
+      points:
+        - x: -100
+          z:  100
+        - x: -100
+          z: -100
+        - x:  100
+          z: -100
+        - x:  100
+          z:  100

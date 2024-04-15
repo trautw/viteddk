@@ -9,8 +9,10 @@
   },
   "dependencies": {
     "@types/three": "^0.163.0",
+    "axios": "^1.6.8",
     "three": "^0.163.0",
-    "vue": "^3.2.45"
+    "vue": "^3.2.45",
+    "yaml": "^2.4.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
