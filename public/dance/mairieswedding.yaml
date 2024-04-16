@@ -1,0 +1,54 @@
+---
+dance:
+  name: Mairi's Wedding
+person:
+  - name: L1
+    model_url: models/fbx/DancingLady.fbx
+    formations:
+      - duration: 2
+        name: 1c turn RH
+        path:
+          points:
+            - x:    0
+              y:    0
+            - x:   50
+              y:  100
+            - x:    0
+              y:  150
+            - x:  -50
+              y:  100
+  - name: L2
+    model_url: models/fbx/DancingLady.fbx
+    formations:
+      - duration: 2
+        name: 1c turn RH
+        path:
+          direction: 0
+          points:
+            - x: 100
+              y: 0
+  - name: M1
+    model_url: models/fbx/DancingMan.fbx
+    formations:
+      - duration: 2
+        name: 1c turn RH
+        path:
+          points:
+            - x:    0
+              y:  200
+            - x:  -50
+              y:  100
+            - x:    0
+              y:   50
+            - x:   50
+              y:  100
+  - name: M2
+    model_url: models/fbx/DancingMan.fbx
+    formations:
+      - duration: 2
+        name: 1c turn RH
+        path:
+          direction: 180
+          points:
+            - x: 100
+              y: 200

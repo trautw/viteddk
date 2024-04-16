@@ -26,10 +26,10 @@ async function readYamlFromUrl(url: string): Promise<any> {
 
 // Example usage
 // const myUrl = "https://example.com/config.yaml";
-const myUrl = "/dance/marieswedding.yaml";
+const myUrl = "/dance/mairieswedding.yaml";
 
-    const boxGeometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
-	const boxMaterial = new THREE.MeshBasicMaterial();
+const boxGeometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
+const boxMaterial = new THREE.MeshBasicMaterial();
 
 export async function loadDance(scene: THREE.Scene, 
                           curveHandles: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] | undefined,
@@ -37,46 +37,40 @@ export async function loadDance(scene: THREE.Scene,
 let result: {curves: {curve: THREE.Curve<THREE.Vector3>}[], dance: any} = {curves: [], dance: undefined};
 await readYamlFromUrl(myUrl)
   .then((dance) => {
-    console.log("Parsed YAML data:", dance);
+    // console.log("Parsed YAML data:", dance);
     result.dance = dance;
-    return dance.person.map( function(person: { name: string; path: { points: { x: number; z: number; }[]; } }) {
-      console.log(person.name);
-					const curveVertices = person.path.points.map( function ( handlePos: { x: number ; z: number ; } ) {
+    return dance.person.map( function(person: { name: any; formations: { path: { points: { x: number; y: number; }[]; }; }[]; }) {
+			const curveVertices = person.formations[0].path.points.map( function ( handlePos: { x: number ; y: number ; } ) {
+			  const handle = new THREE.Mesh( boxGeometry, boxMaterial );
+			  handle.position.copy( new THREE.Vector3(handlePos.x,0,handlePos.y) );
+			  curveHandles!.push( handle );
+			  scene!.add( handle );
+			  return handle.position;
+			} );
 
-						const handle = new THREE.Mesh( boxGeometry, boxMaterial );
-						handle.position.copy( new THREE.Vector3(handlePos.x,0,handlePos.z) );
-						curveHandles!.push( handle );
-						scene!.add( handle );
-						return handle.position;
+			const curve = new THREE.CatmullRomCurve3( curveVertices );
+			curve.curveType = 'centripetal';
+			curve.closed = true;
 
-					} );
+			const points = curve.getPoints( 50 );
+			const line = new THREE.LineLoop(
+				new THREE.BufferGeometry().setFromPoints( points ),
+				new THREE.LineBasicMaterial( { color: 0x00ff00 } )
+			);
 
-					const curve = new THREE.CatmullRomCurve3( curveVertices );
-					curve.curveType = 'centripetal';
-					curve.closed = true;
+			scene!.add( line );
 
-					const points = curve.getPoints( 50 );
-					const line = new THREE.LineLoop(
-						new THREE.BufferGeometry().setFromPoints( points ),
-						new THREE.LineBasicMaterial( { color: 0x00ff00 } )
-					);
-
-					scene!.add( line );
-
-					return {
-						curve,
-						line
-					};
-
+			return {
+				curve,
+				line
+			};
     });
   }).then((mycurves: { curve: THREE.Curve<THREE.Vector3>; }[]) => {
     result.curves = mycurves;
-    const flow = placeDancers(scene, mycurves);
-    console.log(flow);
+    placeDancers(scene, mycurves);
     return mycurves;
   }).catch((error) => {
     console.error("Error reading YAML:", error);
   });
-  console.log('Ende od dance');
   return result;
 }

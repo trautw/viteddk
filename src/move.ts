@@ -16,7 +16,8 @@ let scene: THREE.Scene,
 	clock: THREE.Clock;
 
 let dance: any;	
-let curves: { curve: THREE.Curve<THREE.Vector3>; }[] = [];
+let danceLoaded = false;
+let currentFormation = -1;
 
 init();
 animate();
@@ -39,7 +40,7 @@ function init() {
     scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
 
 	camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-	camera.position.set( 100, 200, 300 );
+	camera.position.set( 200, 600, 300 );
 	camera.lookAt( scene.position );
 
     const controls = new OrbitControls( camera, renderer.domElement );
@@ -71,20 +72,21 @@ function init() {
     scene.add( grid );
 
     loadDance(scene, curveHandles).then((result) => {
-	  curves = result.curves;
 	  dance = result.dance;
-	  console.log('currv = ',curves);
 	  dance.person.forEach( (person, i:number) => {
         const fbxLoader = new FBXLoader();
-        fbxLoader.load( person.model, function ( fbx: THREE.Group<THREE.Object3DEventMap> ) {
+        fbxLoader.load( person.model_url, function ( fbx: THREE.Group<THREE.Object3DEventMap> ) {
 		  person.curve = result.curves[i];
           person.model = SkeletonUtils.clone (fbx);
           person.mixer = new THREE.AnimationMixer( person.model );
           person.mixer.clipAction( person.model.animations[ 0 ] ).play();
           scene.add( person.model );
+          danceLoaded = true;
 		})
       });
-	});
+	}).then( _result => {
+      danceLoaded = true;
+    });
 
     // createPanel();
 
@@ -106,25 +108,43 @@ function animate()  {
 	requestAnimationFrame( animate );
 
     const delta = clock.getDelta();
-	const secondsPerRound = 20;
+	const secondsPerRound = 4;
 	const now = clock.getElapsedTime()/secondsPerRound % 1;
 	const later = (clock.getElapsedTime()/secondsPerRound + 0.01) % 1;
 
+    if (currentFormation < 0) {incFormation()};
+
+    if (dance) {
 	dance.person.forEach( person => {
-	  console.log('Processing person ',person.name);
-	  console.log('model = ',person.model);
-      if (person.model.position) {
-		 console.log('Person = ',person);
-		 if (person.curve) {
+      if ('model' in person && 'position' in person.model) {
+		 if ('curve' in person) {
 	       const curcurve = person.curve.curve;
-           const point = curcurve.getPointAt(now); // Ensure animation loops seamlessly
-           const targetpoint = curcurve.getPointAt(later); // Ensure animation loops seamlessly
+           const point = curcurve.getPointAt(now); 
+           const targetpoint = curcurve.getPointAt(later);
 		   person.model.position.copy(point);
 		   person.model.lookAt(targetpoint);
            person.mixer.update( delta );
+           if (person.formations[currentFormation].path.points.length == 1) {
+             const mixer = <THREE.AnimationMixer>person.mixer;
+             mixer.stopAllAction();
+             if ('direction' in person.formations[currentFormation].path) {
+               const direction = person.formations[currentFormation].path.direction;
+               let currentpos = new THREE.Vector3();
+               currentpos = person.model.position;
+               let targetpoint = new THREE.Vector3();
+               if (0 == direction) {
+                 targetpoint = new THREE.Vector3(currentpos.x,0,currentpos.z+100);
+               };
+               if (180 == direction) {
+                 targetpoint = new THREE.Vector3(currentpos.x,0,currentpos.z-100);
+               };
+               person.model.lookAt(targetpoint);
+             }
+           }
 		 }
-	  };
-	})
+	  }
+    })
+	}
 
 	render();
 }
@@ -134,6 +154,9 @@ function render() {
 	stats.update();
 }
 
-
-
-console.log('DONE');
+function incFormation() {
+  if (danceLoaded) {
+    currentFormation++;
+    // console.log('Next formation ',currentFormation)
+  }
+}
