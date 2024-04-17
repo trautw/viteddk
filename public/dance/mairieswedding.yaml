@@ -6,7 +6,7 @@ person:
     model_url: models/fbx/DancingLady.fbx
     formations:
       - duration: 2
-        name: 1c turn RH
+        name: turn RH
         path:
           points:
             - x:    0
@@ -17,21 +17,39 @@ person:
               y:  150
             - x:  -50
               y:  100
+      - duration: 2
+        name: cast
+        path:
+          points:
+            - x:    0
+              y:    0
+            - x:   50
+              y:  -50
+            - x:  100
+              y:    0
   - name: L2
     model_url: models/fbx/DancingLady.fbx
     formations:
       - duration: 2
-        name: 1c turn RH
+        name: pause
         path:
           direction: 0
           points:
             - x: 100
               y: 0
+      - duration: 2
+        name: step up
+        path:
+          points:
+            - x:  100
+              y:    0
+            - x:    0
+              y:    0
   - name: M1
     model_url: models/fbx/DancingMan.fbx
     formations:
       - duration: 2
-        name: 1c turn RH
+        name: turn RH
         path:
           points:
             - x:    0
@@ -42,13 +60,31 @@ person:
               y:   50
             - x:   50
               y:  100
+      - duration: 2
+        name: cast
+        path:
+          points:
+            - x:    0
+              y:  200
+            - x:   50
+              y:  250
+            - x:  100
+              y:  200
   - name: M2
     model_url: models/fbx/DancingMan.fbx
     formations:
       - duration: 2
-        name: 1c turn RH
+        name: pause
         path:
           direction: 180
           points:
             - x: 100
+              y: 200
+      - duration: 2
+        name: step up
+        path:
+          points:
+            - x: 100
+              y: 200
+            - x:   0
               y: 200

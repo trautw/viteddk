@@ -1,15 +1,17 @@
 import * as THREE from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { loadDance } from './dance';
 
 const curveHandles: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = [];
 
-let settings;
+let settings: any;
 
 let stats: Stats;
+let stats2: Stats;
 let scene: THREE.Scene,
 	camera: THREE.PerspectiveCamera,
 	renderer: THREE.WebGLRenderer,
@@ -19,6 +21,9 @@ let dance: any;
 let danceLoaded = false;
 let currentFormation = -1;
 
+const labels = document.querySelectorAll<HTMLDivElement>('.label')
+const infos = document.createElement( 'div' );
+
 init();
 animate();
 
@@ -26,6 +31,14 @@ function init() {
 
     clock = new THREE.Clock();
 
+    infos.id = 'infosId';
+    infos.className = 'infosClass';
+    infos.innerHTML = 'Infos';
+    infos.style.display = 'block';
+    infos.style.position = 'absolute';
+    infos.style.top = '100px';
+    infos.style.left = '100px';
+    document.body.appendChild( infos );
     const container = document.createElement( 'div' );
     document.body.appendChild( container );
 
@@ -40,7 +53,7 @@ function init() {
     scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
 
 	camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-	camera.position.set( 200, 600, 300 );
+	camera.position.set( 0, 500, 500 );
 	camera.lookAt( scene.position );
 
     const controls = new OrbitControls( camera, renderer.domElement );
@@ -88,10 +101,15 @@ function init() {
       danceLoaded = true;
     });
 
-    // createPanel();
+    createPanel();
 
 	stats = new Stats();
 	document.body.appendChild( stats.dom );
+
+	stats2 = new Stats();
+    stats2.showPanel(2);
+    stats2.dom.style.cssText = 'position:absolute;top:0px;left:80px;';
+	document.body.appendChild( stats2.dom );
 
 	window.addEventListener( 'resize', onWindowResize );
 
@@ -108,16 +126,16 @@ function animate()  {
 	requestAnimationFrame( animate );
 
     const delta = clock.getDelta();
-	const secondsPerRound = 4;
+    const secondsPerRound = settings['seconds per round'];
 	const now = clock.getElapsedTime()/secondsPerRound % 1;
 	const later = (clock.getElapsedTime()/secondsPerRound + 0.01) % 1;
 
     if (currentFormation < 0) {incFormation()};
 
     if (dance) {
-	dance.person.forEach( person => {
-      if ('model' in person && 'position' in person.model) {
-		 if ('curve' in person) {
+      dance.person.forEach( (person,i) => {
+        if ('model' in person && 'position' in person.model) {
+		  if ('curve' in person) {
 	       const curcurve = person.curve.curve;
            const point = curcurve.getPointAt(now); 
            const targetpoint = curcurve.getPointAt(later);
@@ -141,9 +159,24 @@ function animate()  {
                person.model.lookAt(targetpoint);
              }
            }
-		 }
-	  }
-    })
+		  } // curve
+          // Labels
+          const position = person.model.position;
+          // const x = ((1 + position.x) / 2) * window.innerWidth - 50
+          // const y = ((1 - position.z) / 2) * window.innerHeight
+          const x = position.x+200;
+          const y = position.z+200;
+
+          labels[i].style.left = x + 'px'
+          labels[i].style.top = y + 'px'
+          labels[i].style.display = 'block';
+          // labels[i].style.display = data.labelsVisible ? 'block' : 'none'
+          labels[i].textContent = person.name + ': ' + person.formations[currentFormation].name;
+
+          // Info
+          infos.textContent = ' Current Formation: '+currentFormation;
+	    }
+      })
 	}
 
 	render();
@@ -152,11 +185,58 @@ function animate()  {
 function render() {
 	renderer.render( scene, camera );
 	stats.update();
+	stats2.update();
+}
+
+function restartDance() {
+  currentFormation = 0;
 }
 
 function incFormation() {
   if (danceLoaded) {
-    currentFormation++;
+    // currentFormation++;
+    currentFormation = 1;
     // console.log('Next formation ',currentFormation)
   }
+}
+
+function createPanel() {
+  const panel = new GUI( { width: 310 } );
+
+  const folder1 = panel.addFolder( 'Visibility' );
+  const folder2 = panel.addFolder( 'Activation/Deactivation' );
+  const folder3 = panel.addFolder( 'Exports' );
+
+  settings = {
+	'restart': restartDance,
+	'show model': true,
+	'show skeleton': false,
+	'modify step size': 0.05,
+	'seconds per round': 4.0,
+    'show camera position': showCameraPosition,
+  };
+
+  panel.add( settings, 'restart');
+
+  folder1.add( settings, 'show model' ).onChange( showModel );
+
+  folder2.add( settings, 'show skeleton' );
+  folder2.add( settings, 'seconds per round', 1.0, 10.0, 4.0 );
+
+  folder3.add( settings, 'show camera position' );
+
+  folder1.open();
+  folder2.open();
+}
+
+function showModel( visibility: boolean ) {
+  // model.visible = visibility;
+  dance.person.forEach((person: { model: { visible: boolean; }; }) => {
+    person.model.visible = visibility;
+  })
+}
+
+function showCameraPosition() {
+    console.log('Camera position');
+    console.log(camera.position);
 }
