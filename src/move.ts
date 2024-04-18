@@ -19,7 +19,7 @@ let scene: THREE.Scene,
 
 let dance: any;	
 let danceLoaded = false;
-let currentFormation = -1;
+let currentFormation = 0;
 
 const labels = document.querySelectorAll<HTMLDivElement>('.label')
 const infos = document.createElement( 'div' );

@@ -40,13 +40,21 @@ await readYamlFromUrl(myUrl)
     // console.log("Parsed YAML data:", dance);
     result.dance = dance;
     return dance.person.map( function(person: { name: any; formations: { path: { points: { x: number; y: number; }[]; }; }[]; }) {
-			const curveVertices = person.formations[0].path.points.map( function ( handlePos: { x: number ; y: number ; } ) {
-			  const handle = new THREE.Mesh( boxGeometry, boxMaterial );
-			  handle.position.copy( new THREE.Vector3(handlePos.x,0,handlePos.y) );
-			  curveHandles!.push( handle );
-			  scene!.add( handle );
-			  return handle.position;
-			} );
+      let curveVertices: THREE.Vector3[] = [];
+      person.formations.forEach((formation) => {
+        console.log('formation = ',formation);
+			  curveVertices = curveVertices.concat(
+          formation.path.points.map( function ( handlePos: { x: number ; y: number ; } ) {
+    			  const handle = new THREE.Mesh( boxGeometry, boxMaterial );
+			      handle.position.copy( new THREE.Vector3(handlePos.x,0,handlePos.y) );
+			      curveHandles!.push( handle );
+			      scene!.add( handle );
+            console.log('handle = ',handle);
+			      return handle.position;
+			    }) 
+        );
+        console.log('curveVertices = ',curveVertices);
+      });
 
 			const curve = new THREE.CatmullRomCurve3( curveVertices );
 			curve.curveType = 'centripetal';
