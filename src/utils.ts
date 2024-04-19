@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
 export function makeBox( position: THREE.Vector3, boxGeometry: any ) {
 
@@ -18,4 +19,17 @@ export function makeBox( position: THREE.Vector3, boxGeometry: any ) {
 
 	return object;
 
+}
+
+export function newArrow(): THREE.Mesh {
+  const material = new THREE.MeshNormalMaterial();
+  const coneGeom = new THREE.ConeGeometry(5, 10, 10).rotateZ(-Math.PI/2);
+  coneGeom.translate(10, 0, 0);
+  
+  const cylinderGeom = new THREE.CylinderGeometry(2, 2, 15, 10).rotateZ(-Math.PI/2);
+  // cylinder.scale(0.5, 0.5, 0.5);
+
+  const geometry=BufferGeometryUtils.mergeGeometries([coneGeom, cylinderGeom]);
+  const arrowMesh = new THREE.Mesh(geometry, material);
+  return arrowMesh;
 }

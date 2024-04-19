@@ -8,6 +8,7 @@ async function fetchYamlData(url: string): Promise<any> {
 
 import * as yaml from 'yaml';
 import { placeDancers } from './dancers';
+import { newArrow } from './utils';
 
 async function parseYaml(data: string): Promise<any> {
   try {
@@ -28,7 +29,7 @@ async function readYamlFromUrl(url: string): Promise<any> {
 // const myUrl = "https://example.com/config.yaml";
 const myUrl = "/dance/mairieswedding.yaml";
 
-const boxGeometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
+const boxGeometry = new THREE.BoxGeometry( 10, 10, 10 );
 const boxMaterial = new THREE.MeshBasicMaterial();
 
 export async function loadDance(scene: THREE.Scene, 
@@ -39,26 +40,38 @@ await readYamlFromUrl(myUrl)
   .then((dance) => {
     // console.log("Parsed YAML data:", dance);
     result.dance = dance;
-    return dance.person.map( function(person: { name: any; formations: { path: { points: { x: number; y: number; }[]; }; }[]; }) {
+    return dance.person.map( function(person: { name: string; formations: { path: { points: { x: number; y: number; }[]; }; }[]; }) {
+      console.log('Person = ',person.name);
       let curveVertices: THREE.Vector3[] = [];
+      const position: { t: number; v: THREE.Vector3}[] = [];
       person.formations.forEach((formation) => {
         console.log('formation = ',formation);
 			  curveVertices = curveVertices.concat(
-          formation.path.points.map( function ( handlePos: { x: number ; y: number ; } ) {
+          formation.path.points.map( function ( handlePos: { t: number; x: number ; y: number ; } ) {
+            // const arrow = newArrow();
+    			  // const handle = new THREE.Mesh( arrow.geometry, arrow.material );
     			  const handle = new THREE.Mesh( boxGeometry, boxMaterial );
-			      handle.position.copy( new THREE.Vector3(handlePos.x,0,handlePos.y) );
+			      const p = new THREE.Vector3(handlePos.x,0,handlePos.y);
+            position.push({t: handlePos.t, v: p} );
+			      handle.position.copy(p);
 			      curveHandles!.push( handle );
 			      scene!.add( handle );
-            console.log('handle = ',handle);
 			      return handle.position;
 			    }) 
         );
-        console.log('curveVertices = ',curveVertices);
       });
 
 			const curve = new THREE.CatmullRomCurve3( curveVertices );
 			curve.curveType = 'centripetal';
 			curve.closed = true;
+
+      /*
+      curveVertices.forEach((_element,i) => {
+        const tangent = curve.getTangentAt(i/curveVertices.length);
+        const euler = new THREE.Euler(tangent.x,tangent.y,tangent.z);
+        curveHandles![i].setRotationFromEuler(euler);
+      });
+      */
 
 			const points = curve.getPoints( 50 );
 			const line = new THREE.LineLoop(
@@ -66,15 +79,45 @@ await readYamlFromUrl(myUrl)
 				new THREE.LineBasicMaterial( { color: 0x00ff00 } )
 			);
 
-			scene!.add( line );
+      const MicroBeatsPerBeat = 4;
+      const Beats = 16;
+      const fineVertices: THREE.Vector3[] = [position[0].v];
 
+      let beat = -1;
+      let currentPosId = 0;
+      for (let microbeat = 0; microbeat < Beats * MicroBeatsPerBeat; microbeat++) {
+        if (microbeat > beat*MicroBeatsPerBeat) {
+          // use next position
+          currentPosId++;
+          beat = position[currentPosId]?.t;
+          // fineVertices.push(position[currentPosId]?.v);
+        }
+        console.log('Processing microbeat = ',microbeat,', beat = ',beat);
+        fineVertices.push(curve.getPoint(microbeat/(Beats*MicroBeatsPerBeat)));
+      }
+			const finecurve = new THREE.CatmullRomCurve3( fineVertices );
+			finecurve.curveType = 'centripetal';
+			finecurve.closed = true;
+
+			const finepoints = curve.getPoints( 50 );
+			const fineline = new THREE.LineLoop(
+				new THREE.BufferGeometry().setFromPoints( finepoints ),
+				new THREE.LineBasicMaterial( { color: 0x0000ff } )
+			);
+
+			scene!.add( line );
+			scene!.add( fineline );
+
+      console.log('curve = ',curve);
+      console.log('finecurve = ',finecurve);
 			return {
-				curve,
-				line
+				curve: finecurve,
+				line: fineline
 			};
     });
   }).then((mycurves: { curve: THREE.Curve<THREE.Vector3>; }[]) => {
     result.curves = mycurves;
+    console.log('mycurves = ',mycurves);
     placeDancers(scene, mycurves);
     return mycurves;
   }).catch((error) => {

@@ -137,8 +137,9 @@ function animate()  {
         if ('model' in person && 'position' in person.model) {
 		  if ('curve' in person) {
 	       const curcurve = person.curve.curve;
-           const point = curcurve.getPointAt(now); 
-           const targetpoint = curcurve.getPointAt(later);
+           console.log('curcurve = ',curcurve);
+           const point = curcurve.getPoint(now); 
+           const targetpoint = curcurve.getPoint(later);
 		   person.model.position.copy(point);
 		   person.model.lookAt(targetpoint);
            person.mixer.update( delta );

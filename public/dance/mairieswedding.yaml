@@ -1,6 +1,7 @@
 ---
 dance:
   name: Mairi's Wedding
+  beats: 40
 person:
   - name: L1
     model_url: models/fbx/DancingLady.fbx
@@ -11,22 +12,60 @@ person:
           points:
             - x:    0
               y:    0
+              t: 0
             - x:   50
               y:  100
+              t: 0.5
             - x:    0
               y:  150
+              t: 1
             - x:  -50
               y:  100
+              t: 1.5
       - duration: 2
         name: cast
         path:
           points:
             - x:    0
               y:    0
+              t: 2
             - x:   50
               y:  -50
+              t: 3
             - x:  100
               y:    0
+              t: 4
+      - duration: 4
+        name: turn left
+        path:
+          direction: 0
+          points:
+            - x:  100
+              y:    0
+              t: 4
+            - x:  50
+              y:  50
+              t: 5
+            - x: 100
+              y: 150
+              t: 6
+            - x: 150
+              y: 100
+              t: 7
+            - x: 100
+              y:  50
+              t: 7.5
+            - x:  50
+              y: 150
+              t: 8
+      - duration: 8
+        name: wait
+        path:
+          direction: 45
+          points:
+            - x:  50
+              y: 150
+              t: 16
   - name: L2
     model_url: models/fbx/DancingLady.fbx
     formations:
@@ -37,14 +76,52 @@ person:
           points:
             - x: 100
               y: 0
+              t: 0
       - duration: 2
         name: step up
         path:
           points:
             - x:  100
               y:    0
+              t: 2
             - x:    0
               y:    0
+              t: 4
+      - duration: 4
+        name: pause
+        path:
+          direction: 0
+          points:
+            - x: 0
+              y: 0
+              t: 8
+      - duration: 8
+        name: wait
+        path:
+          direction: 0
+          points:
+            - x:   0
+              y:   0
+              t: 16
+  - name: L3
+    model_url: models/fbx/DancingLady.fbx
+    formations:
+      - duration: 8
+        name: pause
+        path:
+          direction: 0
+          points:
+            - x: 200
+              y: 0
+              t: 0
+      - duration: 8
+        name: wait
+        path:
+          direction: 0
+          points:
+            - x: 200
+              y:   0
+              t: 16
   - name: M1
     model_url: models/fbx/DancingMan.fbx
     formations:
@@ -54,22 +131,59 @@ person:
           points:
             - x:    0
               y:  200
+              t: 0
             - x:  -50
               y:  100
+              t: 0.5
             - x:    0
               y:   50
+              t: 1
             - x:   50
               y:  100
+              t: 1.5
       - duration: 2
         name: cast
         path:
           points:
             - x:    0
               y:  200
+              t: 2
             - x:   50
               y:  250
+              t: 3
             - x:  100
               y:  200
+              t: 4
+      - duration: 4
+        name: turn left
+        path:
+          points:
+            - x:  100
+              y:  200
+              t: 4
+            - x:  150
+              y:  100
+              t: 5
+            - x:  100
+              y:   50
+              t: 6
+            - x:   50
+              y:  100
+              t: 7
+            - x:  100
+              y:  150
+              t: 7.5
+            - x:  150
+              y:   50
+              t: 8
+      - duration: 8
+        name: wait
+        path:
+          direction: 215
+          points:
+            - x: 150
+              y:  50
+              t: 16
   - name: M2
     model_url: models/fbx/DancingMan.fbx
     formations:
@@ -80,11 +194,36 @@ person:
           points:
             - x: 100
               y: 200
+              t: 0
+            - x: 100
+              y: 200
+              t: 2
       - duration: 2
         name: step up
         path:
           points:
             - x: 100
               y: 200
+              t: 2
             - x:   0
               y: 200
+              t: 3
+      - duration: 4
+        name: pause
+        path:
+          direction: 180
+          points:
+            - x:   0
+              y: 200
+              t: 4
+            - x:   0
+              y: 200
+              t: 8
+      - duration: 8
+        name: wait
+        path:
+          direction: 180
+          points:
+            - x:   0
+              y: 200
+              t: 16
