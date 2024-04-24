@@ -16,12 +16,17 @@ let scene: THREE.Scene,
 	camera: THREE.PerspectiveCamera,
 	renderer: THREE.WebGLRenderer,
 	clock: THREE.Clock;
+let isPaused = false;
+let timeInDance = 0;
 
 let dance: any;	
 let danceLoaded = false;
 let currentFormation = 0;
+let bar = 0;
 
-const labels = document.querySelectorAll<HTMLDivElement>('.label')
+// const labels = document.querySelectorAll<HTMLDivElement>('.label')
+const labels: HTMLDivElement[] = [];
+const time = document.createElement( 'div' );
 const infos = document.createElement( 'div' );
 
 init();
@@ -31,6 +36,15 @@ function init() {
 
     clock = new THREE.Clock();
 
+    time.id = 'timeId';
+    time.className = 'timeClass';
+    time.innerHTML = 'time';
+    time.style.display = 'block';
+    time.style.position = 'absolute';
+    time.style.top = '120px';
+    time.style.left = '100px';
+    document.body.appendChild( time );
+
     infos.id = 'infosId';
     infos.className = 'infosClass';
     infos.innerHTML = 'Infos';
@@ -39,6 +53,7 @@ function init() {
     infos.style.top = '100px';
     infos.style.left = '100px';
     document.body.appendChild( infos );
+
     const container = document.createElement( 'div' );
     document.body.appendChild( container );
 
@@ -87,6 +102,17 @@ function init() {
     loadDance(scene, curveHandles).then((result) => {
 	  dance = result.dance;
 	  dance.person.forEach( (person, i:number) => {
+        const label = document.createElement( 'div' );
+        label.id = person.label;
+        label.className = 'label';
+        label.innerHTML = person.name;
+        label.style.display = 'block';
+        label.style.position = 'absolute';
+        label.style.top = '120px';
+        label.style.left = '100px';
+        document.body.appendChild( label );
+        labels.push(label);
+
         const fbxLoader = new FBXLoader();
         fbxLoader.load( person.model_url, function ( fbx: THREE.Group<THREE.Object3DEventMap> ) {
 		  person.curve = result.curves[i];
@@ -121,23 +147,29 @@ function onWindowResize() {
 	renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
-
 function animate()  {
-	requestAnimationFrame( animate );
-
+  if (!isPaused) {
     const delta = clock.getDelta();
-    const secondsPerRound = settings['seconds per round'];
-	const now = clock.getElapsedTime()/secondsPerRound % 1;
-	const later = (clock.getElapsedTime()/secondsPerRound + 0.01) % 1;
-
-    if (currentFormation < 0) {incFormation()};
-
+    timeInDance = timeInDance + delta;
     if (dance) {
+      // const secondsPerRound = settings['seconds per round'];
+	  // const now = clock.getElapsedTime()/secondsPerRound % 1;
+	  // const now = (clock.getElapsedTime()/dance.dance.duration) % 1;
+	  const now = (timeInDance/dance.dance.duration) % 1;
+	  const later = (now + 0.01) % 1;
+
+      const barsPerDance = dance.dance.beats;
+      // const secondsPerDance = 5*60+20;
+      // const pace = secondsPerDance / barsPerDance;
+      const currentBar = barsPerDance*now;
+      bar = currentBar;
+
+      if (currentFormation < 0) {incFormation()};
+
       dance.person.forEach( (person,i) => {
         if ('model' in person && 'position' in person.model) {
 		  if ('curve' in person) {
 	       const curcurve = person.curve.curve;
-           console.log('curcurve = ',curcurve);
            const point = curcurve.getPoint(now); 
            const targetpoint = curcurve.getPoint(later);
 		   person.model.position.copy(point);
@@ -169,18 +201,21 @@ function animate()  {
           const y = position.z+200;
 
           labels[i].style.left = x + 'px'
-          labels[i].style.top = y + 'px'
+          labels[i].style.top  = y + 'px'
           labels[i].style.display = 'block';
           // labels[i].style.display = data.labelsVisible ? 'block' : 'none'
           labels[i].textContent = person.name + ': ' + person.formations[currentFormation].name;
 
           // Info
+          time.textContent = 'Clock: ' + Number(clock.getElapsedTime()).toFixed(2) + ' Bar: '+bar;
           infos.textContent = ' Current Formation: '+currentFormation;
 	    }
       })
 	}
+  }
 
-	render();
+  render();
+  requestAnimationFrame( animate );
 }
 
 function render() {
@@ -190,7 +225,15 @@ function render() {
 }
 
 function restartDance() {
+  clock.start();
   currentFormation = 0;
+}
+
+function pauseResumeDance() {
+  isPaused = !isPaused;
+  if (isPaused) {
+    clock.running = false;
+  }
 }
 
 function incFormation() {
@@ -210,14 +253,16 @@ function createPanel() {
 
   settings = {
 	'restart': restartDance,
+	'pause resume': pauseResumeDance,
 	'show model': true,
 	'show skeleton': false,
 	'modify step size': 0.05,
-	'seconds per round': 4.0,
+	'seconds per round': 320, // dance.dance.duration,
     'show camera position': showCameraPosition,
   };
 
   panel.add( settings, 'restart');
+  panel.add( settings, 'pause resume');
 
   folder1.add( settings, 'show model' ).onChange( showModel );
 

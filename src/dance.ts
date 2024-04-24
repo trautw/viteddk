@@ -40,7 +40,8 @@ await readYamlFromUrl(myUrl)
   .then((dance) => {
     // console.log("Parsed YAML data:", dance);
     result.dance = dance;
-    return dance.person.map( function(person: { name: string; formations: { path: { points: { x: number; y: number; }[]; }; }[]; }) {
+    const Beats = dance.dance.beats;
+    return dance.person.map( function(person: { name: string; formations: { path: { points: { t: number; x: number; y: number; }[]; }; }[]; }) {
       console.log('Person = ',person.name);
       let curveVertices: THREE.Vector3[] = [];
       const position: { t: number; v: THREE.Vector3}[] = [];
@@ -80,22 +81,55 @@ await readYamlFromUrl(myUrl)
 			);
 
       const MicroBeatsPerBeat = 4;
-      const Beats = 16;
       const fineVertices: THREE.Vector3[] = [position[0].v];
 
       let beat = -1;
       let currentPosId = 0;
-      for (let microbeat = 0; microbeat < Beats * MicroBeatsPerBeat; microbeat++) {
-        if (microbeat > beat*MicroBeatsPerBeat) {
+      let oldPosId = 0;
+      let nextPosId = 1;
+      console.log('curvevertices = ',curveVertices);
+      console.log('curve = ',curve);
+      const microbeats = dance.dance.beats * MicroBeatsPerBeat;
+      for (let microbeat = 0; microbeat < microbeats; microbeat++) {
+        let currentBeat = microbeat / MicroBeatsPerBeat;
+        console.log(person.name,' BEAT = ',currentBeat);
+        let oldBeat = position[oldPosId].t;
+        let nextBeat= position[nextPosId].t;
+        console.log('FromBeat = ',oldBeat,' ToBeat = ',nextBeat);
+
+        if (currentBeat >= nextBeat) {
+          console.log('Advancing');
           // use next position
+          oldPosId++;
+          nextPosId++;
+          oldBeat = position[oldPosId].t;
+          nextBeat= position[nextPosId].t;
+
           currentPosId++;
           beat = position[currentPosId]?.t;
           // fineVertices.push(position[currentPosId]?.v);
         }
-        console.log('Processing microbeat = ',microbeat,', beat = ',beat);
-        fineVertices.push(curve.getPoint(microbeat/(Beats*MicroBeatsPerBeat)));
+        console.log('Processing microbeat = ',microbeat,', oldBeat = ',oldBeat);
+        console.log('FromBeat = ',oldBeat,' ToBeat = ',nextBeat);
+        let oldMicroBeat = oldBeat * MicroBeatsPerBeat;
+        let microBeatIntoVertex = microbeat - oldMicroBeat;
+        // let microBeatPerVetex = MicroBeatsPerBeat*(nextBeat-oldBeat);
+
+        // fineVertices.push(curve.getPoint(microbeat/(Beats*MicroBeatsPerBeat)));
+        // let pos = (oldPosId + microBeatIntoVertex/microBeatPerVetex)/microbeats;
+        const microBeatsOfVertex = (nextBeat-oldBeat)*MicroBeatsPerBeat;
+        console.log('microBeatIntoVertex = ',microBeatIntoVertex);
+        console.log('microBeatsOfVertex = ',microBeatsOfVertex);
+
+        let pos = (oldPosId+(microBeatIntoVertex/microBeatsOfVertex))/curve.points.length;
+        console.log('Getting pos ',pos);
+        console.log('curve.length = ',curve.getLength());
+        let point = curve.getPoint(pos);
+        console.log('point = ',point);
+        fineVertices.push(point);
       }
 			const finecurve = new THREE.CatmullRomCurve3( fineVertices );
+      // console.log('Finecurve = ',finecurve);
 			finecurve.curveType = 'centripetal';
 			finecurve.closed = true;
 
