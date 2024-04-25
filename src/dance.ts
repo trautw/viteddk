@@ -40,7 +40,7 @@ await readYamlFromUrl(myUrl)
   .then((dance) => {
     // console.log("Parsed YAML data:", dance);
     result.dance = dance;
-    const Beats = dance.dance.beats;
+    dance.dance.secondsPerBar = dance.dance.duration / dance.dance.beats;
     return dance.person.map( function(person: { name: string; formations: { path: { points: { t: number; x: number; y: number; }[]; }; }[]; }) {
       console.log('Person = ',person.name);
       let curveVertices: THREE.Vector3[] = [];

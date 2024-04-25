@@ -164,8 +164,6 @@ function animate()  {
       const currentBar = barsPerDance*now;
       bar = currentBar;
 
-      if (currentFormation < 0) {incFormation()};
-
       dance.person.forEach( (person,i) => {
         if ('model' in person && 'position' in person.model) {
 		  if ('curve' in person) {
@@ -193,22 +191,29 @@ function animate()  {
              }
            }
 		  } // curve
-          // Labels
-          const position = person.model.position;
-          // const x = ((1 + position.x) / 2) * window.innerWidth - 50
-          // const y = ((1 - position.z) / 2) * window.innerHeight
-          const x = position.x+200;
-          const y = position.z+200;
 
-          labels[i].style.left = x + 'px'
-          labels[i].style.top  = y + 'px'
-          labels[i].style.display = 'block';
-          // labels[i].style.display = data.labelsVisible ? 'block' : 'none'
-          labels[i].textContent = person.name + ': ' + person.formations[currentFormation].name;
+      // Labels
+      let formationId = 0;
+      let formationStart = 0;
+      while (bar >= formationStart + person.formations[formationId].duration) {
+        formationStart += person.formations[formationId].duration;
+        formationId++;
+      }
+      const position = person.model.position;
+      // const x = ((1 + position.x) / 2) * window.innerWidth - 50
+      // const y = ((1 - position.z) / 2) * window.innerHeight
+      const x = position.x+200;
+      const y = position.z+200;
 
-          // Info
-          time.textContent = 'Clock: ' + Number(clock.getElapsedTime()).toFixed(2) + ' Bar: '+bar;
-          infos.textContent = ' Current Formation: '+currentFormation;
+      labels[i].style.left = x + 'px'
+      labels[i].style.top  = y + 'px'
+      labels[i].style.display = 'block';
+      // labels[i].style.display = data.labelsVisible ? 'block' : 'none'
+      labels[i].textContent = person.name + ': ' + person.formations[formationId].name;
+
+      // Info
+      time.textContent = 'Clock: ' + Number(clock.getElapsedTime()).toFixed(2) + ' Bar: '+ Number(bar).toFixed(2);
+      infos.textContent = ' Current Formation: '+currentFormation;
 	    }
       })
 	}
@@ -225,8 +230,17 @@ function render() {
 }
 
 function restartDance() {
-  clock.start();
-  currentFormation = 0;
+  timeInDance = 0;
+}
+
+function forwardDance() {
+  timeInDance += 4*dance.dance.secondsPerBar;
+  console.log('dance = ',dance);
+  console.log('timeInDance = ',timeInDance);
+}
+
+function backDance() {
+  timeInDance -= 4*dance.dance.secondsPerBar;
 }
 
 function pauseResumeDance() {
@@ -254,6 +268,8 @@ function createPanel() {
   settings = {
 	'restart': restartDance,
 	'pause resume': pauseResumeDance,
+	'+4': forwardDance,
+	'-4': backDance,
 	'show model': true,
 	'show skeleton': false,
 	'modify step size': 0.05,
@@ -262,7 +278,9 @@ function createPanel() {
   };
 
   panel.add( settings, 'restart');
+  panel.add( settings, '-4');
   panel.add( settings, 'pause resume');
+  panel.add( settings, '+4');
 
   folder1.add( settings, 'show model' ).onChange( showModel );
 
